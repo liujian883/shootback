@@ -305,6 +305,10 @@ class Master:
 
     def _listen_slaver(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        
         try_bind_port(sock, self.communicate_addr)
         sock.listen(10)
         _listening_sockets.append(sock)
@@ -322,6 +326,10 @@ class Master:
 
     def _listen_customer(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        
         try_bind_port(sock, self.customer_listen_addr)
         sock.listen(20)
         _listening_sockets.append(sock)
@@ -329,6 +337,14 @@ class Master:
             fmt_addr(self.customer_listen_addr)))
         while True:
             conn_customer, addr_customer = sock.accept()
+           
+            slaver_count = len(self.slaver_pool)
+
+            if slaver_count == 0:
+                log.warning("no slaver available, do not accept new customer!!!")
+                try_close(conn_customer)
+                continue
+ 
             log.info("Serving customer: {} Total customers: {}".format(
                 addr_customer, self.pending_customers.qsize() + 1
             ))
