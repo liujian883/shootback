@@ -130,6 +130,8 @@ class SocketBridge:
         self.conn_rd.add(conn1)
         self.conn_rd.add(conn2)
 
+        log.info("add_conn_pair connections SUM:"+str(len(self.conn_rd)))
+
         # record sockets pairs
         self.map[conn1] = conn2
         self.map[conn2] = conn1
@@ -189,7 +191,9 @@ class SocketBridge:
                 try:
                     # send data, we use `buff[:rec_len]` slice because
                     #   only the front of buff is filled
-                    self.map[s].send(buff[:rec_len])
+                    send_len = self.map[s].send(buff[:rec_len])
+                    if send_len != rec_len:
+                        log.error("send data:"+str(send_len)+",recv data:"+str(rec_len))
                 except:
                     # unable to send, close connection
                     self._rd_shutdown(s)
